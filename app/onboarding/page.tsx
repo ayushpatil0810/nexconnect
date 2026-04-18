@@ -80,8 +80,7 @@ export default function OnboardingPage() {
       if (!res.ok) throw new Error("Failed to save profile");
 
       toast.success("Profile created! Welcome to NexConnect 🎉");
-      router.push("/feed");
-      router.refresh();
+      window.location.href = "/feed";
     } catch {
       toast.error("Failed to save your profile. Please try again.");
     } finally {
