@@ -120,6 +120,66 @@ export async function calculateTrustScore(userId: string): Promise<void> {
       } 
     }
   );
+
+  // ---------------------------------------------------------
+  // GROWTH ENGINE: Process Pending Referrals on Verification
+  // ---------------------------------------------------------
+  if (verificationStatus === "VERIFIED") {
+    const pendingReferral = await db.collection("referrals").findOne({
+      referredUserId: userId,
+      status: "PENDING"
+    });
+
+    if (pendingReferral) {
+      // 1. Mark Referral as Verified
+      await db.collection("referrals").updateOne(
+        { _id: pendingReferral._id },
+        { $set: { status: "VERIFIED", updatedAt: new Date() } }
+      );
+
+      // 2. Increment Referrer Counts
+      await db.collection("profiles").updateOne(
+        { userId: pendingReferral.referrerId },
+        { $inc: { referralCount: 1, verifiedReferralCount: 1 } }
+      );
+
+      // 3. Process Milestone Rewards
+      const referrerProfile = await db.collection("profiles").findOne({ userId: pendingReferral.referrerId });
+      if (referrerProfile) {
+        const vCount = referrerProfile.verifiedReferralCount || 0;
+        
+        // Define Milestones
+        const MILESTONES = [1, 5, 10, 50, 100];
+        if (MILESTONES.includes(vCount)) {
+          await db.collection("rewards").insertOne({
+            userId: pendingReferral.referrerId,
+            milestone: vCount,
+            rewardType: `TIER_${vCount}_UNLOCK`,
+            status: "UNLOCKED",
+            createdAt: new Date()
+          });
+
+          // Auto-generate promotional coupon for reaching milestone
+          const expiryDate = new Date();
+          expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month expiry
+
+          const couponCode = `GROWTH${vCount}X-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+          await db.collection("coupons").insertOne({
+            code: couponCode,
+            type: vCount >= 10 ? "MULTIPLIER" : "FLAT",
+            value: vCount >= 10 ? 2 : 500 * vCount, // e.g. 2x multiplier or 500 flat credits
+            minSpend: 0,
+            expiryDate,
+            usageLimit: 1, // Only usable once
+            perUserLimit: 1,
+            isActive: true,
+            earnedByUserId: pendingReferral.referrerId,
+            createdAt: new Date(),
+          });
+        }
+      }
+    }
+  }
 }
 
 // Create a new verification record

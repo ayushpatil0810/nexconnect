@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getProfileByUserId, createProfile, updateProfile, generateUniqueUsername } from "@/lib/db/profile";
+import { getDb } from "@/lib/mongodb";
 
 // GET /api/profile - get current user's profile
 export async function GET(request: NextRequest) {
@@ -37,6 +38,29 @@ export async function POST(request: NextRequest) {
     body.username || session.user.name || session.user.email?.split("@")[0] || "user"
   );
 
+  // Generate unique referral code for the new user
+  const newReferralCode = session.user.id.substring(0, 6).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
+
+  // Handle incoming referral attribution
+  let referredById = null;
+  const db = await getDb();
+  
+  if (body.referralCode) {
+    const referrerProfile = await db.collection("profiles").findOne({ referralCode: body.referralCode });
+    // Prevent self-referral (though technically impossible at creation, it's a safe guard)
+    if (referrerProfile && referrerProfile.userId !== session.user.id) {
+      referredById = referrerProfile.userId;
+      
+      // Create Pending Referral Record
+      await db.collection("referrals").insertOne({
+        referrerId: referrerProfile.userId,
+        referredUserId: session.user.id,
+        status: "PENDING",
+        createdAt: new Date(),
+      });
+    }
+  }
+
   const profile = await createProfile({
     userId: session.user.id,
     username,
@@ -51,6 +75,10 @@ export async function POST(request: NextRequest) {
     education: [],
     experience: [],
     skills: [],
+    referralCode: newReferralCode,
+    referredBy: referredById || undefined,
+    referralCount: 0,
+    verifiedReferralCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

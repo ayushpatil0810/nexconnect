@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Briefcase, Search, Bell, LogOut, Settings, User, Moon, Sun, Building2 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { Briefcase, Search, Bell, LogOut, Settings, User, Moon, Sun, Building2, Calendar, Globe, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +22,7 @@ import { NotificationBell } from "./notification-bell";
 
 export function Navbar({ profileUsername }: { profileUsername?: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -60,8 +61,20 @@ export function Navbar({ profileUsername }: { profileUsername?: string }) {
         </div>
 
         <nav className="hidden md:flex items-center gap-6 ml-4 text-sm font-medium">
-          <Link href="/jobs" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/jobs" className={`flex items-center gap-2 ${pathname === '/jobs' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`}>
             <Briefcase className="w-4 h-4" /> Jobs
+          </Link>
+          <Link href="/events" className={`flex items-center gap-2 ${pathname === '/events' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`}>
+            <Calendar className="w-4 h-4" /> Events
+          </Link>
+          <Link href="/business" className={`flex items-center gap-2 ${pathname === '/business' ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`}>
+            <Building2 className="w-4 h-4" /> Business Inbox
+          </Link>
+          <Link href="/marketplace" className={`flex items-center gap-2 ${pathname.startsWith('/marketplace') ? 'text-primary' : 'text-muted-foreground hover:text-primary'} transition-colors`}>
+            <Globe className="w-4 h-4" /> Marketplace
+          </Link>
+          <Link href="/rewards" className={`flex items-center gap-2 ${pathname.startsWith('/rewards') ? 'text-yellow-600 dark:text-yellow-500' : 'text-muted-foreground hover:text-yellow-600 dark:hover:text-yellow-500'} transition-colors`}>
+            <Trophy className="w-4 h-4" /> Rewards
           </Link>
         </nav>
 
@@ -112,6 +125,11 @@ export function Navbar({ profileUsername }: { profileUsername?: string }) {
               <DropdownMenuItem asChild>
                 <Link href="/jobs/applications" className="gap-2" id="nav-applications">
                   <Briefcase className="w-4 h-4" /> My Applications
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/rewards" className="gap-2 text-yellow-600 dark:text-yellow-500 font-medium" id="nav-rewards">
+                  <Trophy className="w-4 h-4" /> Rewards & Referrals
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

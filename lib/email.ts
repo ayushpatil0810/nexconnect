@@ -69,3 +69,79 @@ export async function sendVerificationEmail(to: string, magicLink: string) {
 
   return info;
 }
+
+export async function sendTicketEmail(to: string, userName: string, eventTitle: string, ticketId: string, eventDate: string, eventLocation: string) {
+  let transporter;
+
+  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+    const port = Number(process.env.SMTP_PORT) || 2525;
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port,
+      secure: port === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+    });
+  } else {
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+  }
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticketId)}`;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; text-align: center;">
+      <h2 style="color: #333; margin-bottom: 5px;">Your Event Ticket</h2>
+      <p style="color: #666; margin-top: 0;">${eventTitle}</p>
+      
+      <div style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">TICKET ID</p>
+        <h3 style="margin: 0 0 20px 0; color: #000; letter-spacing: 2px;">${ticketId}</h3>
+        
+        <img src="${qrUrl}" alt="Ticket QR Code" style="width: 150px; height: 150px; border: 4px solid #fff; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" />
+      </div>
+
+      <div style="text-align: left; margin-top: 20px;">
+        <p><strong>Name:</strong> ${userName}</p>
+        <p><strong>Date:</strong> ${eventDate}</p>
+        <p><strong>Location:</strong> ${eventLocation}</p>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 12px; color: #999;">Please present this QR code or Ticket ID at the event entrance.</p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM_EMAIL || '"NexConnect Events" <events@nexconnect.app>',
+    to,
+    subject: `Your Ticket: ${eventTitle}`,
+    html: htmlContent,
+  });
+
+  // Since SMTP might be blocked by local ISPs during development, always log the ticket link so it's accessible.
+  console.log("\n=======================================================");
+  console.log(`🎫 TICKET GENERATED FOR: ${to}`);
+  console.log(`🔗 VIEW TICKET: http://localhost:3000/events/ticket/${ticketId}`);
+  console.log("=======================================================\n");
+
+  if (!process.env.SMTP_HOST) {
+    console.log("💌 [DEV MODE] Preview your ticket email here: %s", nodemailer.getTestMessageUrl(info));
+  }
+
+  return info;
+}

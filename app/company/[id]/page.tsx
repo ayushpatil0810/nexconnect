@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { getCompanyById } from "@/lib/db/company";
 import { getJobsByCompany } from "@/lib/db/jobs";
 import { Navbar } from "@/components/navbar";
-import { getProfileByUserId } from "@/lib/db/profile";
+import { getProfileByUserId, getUserWithProfile } from "@/lib/db/profile";
 import CompanyView from "./company-view";
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,13 +31,29 @@ export default async function CompanyPage({ params }: { params: Promise<{ id: st
 
   const isOwner = session?.user?.id === company.creatorId;
 
+  // Hydrate Authorized Representatives
+  let reps = company.authorizedRepresentatives || [];
+  // Ensure creator is always a representative
+  if (!reps.find(r => r.userId === company.creatorId)) {
+    reps.unshift({ userId: company.creatorId, role: "Owner" });
+  }
+
+  const hydratedReps = await Promise.all(
+    reps.map(async (rep) => {
+      const userProfile = await getUserWithProfile(rep.userId);
+      return { ...rep, user: userProfile };
+    })
+  );
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar profileUsername={currentUsername} />
       <CompanyView 
         company={JSON.parse(JSON.stringify(company))} 
         jobs={JSON.parse(JSON.stringify(jobs))}
+        representatives={JSON.parse(JSON.stringify(hydratedReps))}
         isOwner={isOwner} 
+        currentUserId={session?.user?.id}
       />
     </div>
   );

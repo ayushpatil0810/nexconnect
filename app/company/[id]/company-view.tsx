@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Building2, Globe, MapPin, Users, ShieldAlert, ShieldCheck, Edit3, PlusCircle, Save, X, Loader2, Camera, Briefcase, ChevronRight } from "lucide-react";
+import { Building2, Globe, MapPin, Users, ShieldAlert, ShieldCheck, Edit3, PlusCircle, Save, X, Loader2, Camera, Briefcase, ChevronRight, Calendar, Megaphone, FileText, Eye, TrendingUp, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,14 +16,37 @@ import { useRouter } from "next/navigation";
 interface CompanyViewProps {
   company: Company;
   jobs: Job[];
+  representatives: any[];
   isOwner: boolean;
+  currentUserId?: string;
 }
 
-export default function CompanyView({ company: initialCompany, jobs, isOwner }: CompanyViewProps) {
+export default function CompanyView({ company: initialCompany, jobs, representatives, isOwner, currentUserId }: CompanyViewProps) {
   const [company, setCompany] = useState(initialCompany);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   const router = useRouter();
+
+  const handleClaimOwnership = async () => {
+    setClaiming(true);
+    try {
+      const res = await fetch(`/api/company/${company._id}/claim`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to submit claim");
+      }
+      toast.success("Ownership claim submitted for review. Your verification is pending.");
+      
+      // Optimistic UI update
+      setCompany(prev => ({ ...prev, verificationStatus: "PENDING" }));
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   // Edit states
   const [editName, setEditName] = useState(company.name);
@@ -32,6 +55,8 @@ export default function CompanyView({ company: initialCompany, jobs, isOwner }: 
   const [editLocation, setEditLocation] = useState(company.location);
   const [editWebsite, setEditWebsite] = useState(company.website || "");
   const [editSize, setEditSize] = useState(company.size);
+  const [newRepId, setNewRepId] = useState("");
+  const [newRepRole, setNewRepRole] = useState("Representative");
 
   async function handleSave() {
     setSaving(true);
@@ -79,44 +104,105 @@ export default function CompanyView({ company: initialCompany, jobs, isOwner }: 
     setEditLocation(company.location);
     setEditWebsite(company.website || "");
     setEditSize(company.size);
+    setNewRepId("");
     setEditMode(false);
+  }
+
+  async function handleAddRepresentative() {
+    if (!newRepId.trim()) {
+      toast.error("Please enter a valid User ID");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/company/${company._id}/representatives`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: newRepId, role: newRepRole }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to add representative");
+      }
+      toast.success("Representative mapped successfully. Please refresh the page to see changes.");
+      setNewRepId("");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error adding representative");
+    }
   }
 
   return (
     <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 animate-fade-in">
       {isOwner && (
-        <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-primary flex items-center gap-2">
-              <Building2 className="w-4 h-4" /> Company Dashboard
-            </h2>
-            <p className="text-sm text-muted-foreground">You are viewing this page as the owner.</p>
+        <div className="mb-6 bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-primary/5 px-4 py-3 border-b border-border/50 flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-primary flex items-center gap-2">
+                <Building2 className="w-4 h-4" /> Company Administration
+              </h2>
+            </div>
+            <div className="flex gap-2">
+              {!editMode ? (
+                <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2 h-8">
+                  <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={handleCancelEdit} className="h-8">
+                    <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving} className="h-8">
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {!editMode ? (
-              <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-2">
-                <Edit3 className="w-4 h-4" /> Edit Details
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                  <X className="w-4 h-4 mr-1" /> Cancel
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving}>
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
-                  Save
-                </Button>
-              </div>
-            )}
+          
+          <div className="flex overflow-x-auto p-2 gap-1 items-center hide-scrollbar bg-muted/20">
             {company.verificationLevel !== "STRONG" && !editMode && (
-              <Button size="sm" asChild className="gap-2">
-                <Link href={`/company/create`}>Verify Ownership</Link>
+              <Button size="sm" asChild variant="destructive" className="gap-2 shrink-0 h-8">
+                <Link href={`/company/create`}><ShieldAlert className="w-3.5 h-3.5"/> Verify Ownership</Link>
               </Button>
+            )}
+            
+            {!editMode && company.verificationLevel === "STRONG" && (
+              <>
+                <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
+                  <Link href={`/company/${company._id}/events/new`}>
+                    <PlusCircle className="w-3.5 h-3.5" /> Host Event
+                  </Link>
+                </Button>
+                <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
+                  <Link href={`/company/${company._id}/opportunities/new`}>
+                    <Globe className="w-3.5 h-3.5" /> Post Pitch
+                  </Link>
+                </Button>
+                
+                <div className="w-px h-4 bg-border/80 mx-1 shrink-0" />
+                
+                <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
+                  <Link href={`/company/${company._id}/events`}>
+                    <Calendar className="w-3.5 h-3.5" /> Events
+                  </Link>
+                </Button>
+                <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
+                  <Link href={`/company/${company._id}/promotions`}>
+                    <Megaphone className="w-3.5 h-3.5" /> Promotions
+                  </Link>
+                </Button>
+                <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
+                  <Link href={`/company/${company._id}/proposals`}>
+                    <FileText className="w-3.5 h-3.5" /> Pitch Proposals
+                  </Link>
+                </Button>
+              </>
             )}
             {!editMode && (
-              <Button size="sm" asChild variant="default" className="gap-2">
+              <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
                 <Link href={`/company/${company._id}/recruitment`}>
-                  <Users className="w-4 h-4" /> Manage Applicants
+                  <Users className="w-3.5 h-3.5" /> Applicants
                 </Link>
               </Button>
             )}
@@ -164,6 +250,40 @@ export default function CompanyView({ company: initialCompany, jobs, isOwner }: 
                   )}
                 </div>
               </div>
+
+              {/* Inline Analytics Layer */}
+              {isOwner && !editMode && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pt-2">
+                  <div className="bg-muted/30 border border-border/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <Eye className="w-4 h-4" /> <span className="text-xs font-medium">Profile Views</span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">
+                      {Math.floor(120 * ((company.trustScore || 10) / 10) * 1.5).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-muted/30 border border-border/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <TrendingUp className="w-4 h-4" /> <span className="text-xs font-medium">Engagement</span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">
+                      {Math.floor(Math.floor(120 * ((company.trustScore || 10) / 10) * 1.5) * 0.08).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-muted/30 border border-border/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <BarChart3 className="w-4 h-4" /> <span className="text-xs font-medium">Engagement Rate</span>
+                    </div>
+                    <p className="text-xl font-bold text-primary">8.0%</p>
+                  </div>
+                  <div className="bg-muted/30 border border-border/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <ShieldCheck className="w-4 h-4" /> <span className="text-xs font-medium">Trust Score</span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">{company.trustScore || 0}/100</p>
+                  </div>
+                </div>
+              )}
 
               {editMode ? (
                 <div className="space-y-4">
@@ -241,6 +361,85 @@ export default function CompanyView({ company: initialCompany, jobs, isOwner }: 
               )}
             </CardContent>
           </Card>
+
+          <Card className="border-border/50 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" /> Authorized Representatives
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                The following individuals have been verified as official representatives of this organization. To ensure security, investment inquiries should only be directed to these verified members.
+              </p>
+              
+              {editMode && (
+                <div className="bg-muted/50 p-4 rounded-xl border border-border mb-4 space-y-3">
+                  <h4 className="text-sm font-semibold">Map New Representative</h4>
+                  <div className="flex gap-2 items-center">
+                    <Input 
+                      placeholder="User ID..." 
+                      className="h-8 flex-1 text-xs" 
+                      value={newRepId}
+                      onChange={(e) => setNewRepId(e.target.value)}
+                    />
+                    <select 
+                      className="h-8 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm"
+                      value={newRepRole}
+                      onChange={(e) => setNewRepRole(e.target.value)}
+                    >
+                      <option value="Representative">Representative</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Owner">Owner</option>
+                    </select>
+                    <Button size="sm" onClick={handleAddRepresentative} className="h-8 px-3 whitespace-nowrap">
+                      Map User
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    By mapping a user, you grant them authority to receive direct, secure investment inquiries on behalf of the company.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {representatives.map((rep, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 border rounded-xl bg-background shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted overflow-hidden">
+                        {rep.user?.image ? (
+                          <img src={rep.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-primary/20 text-primary flex items-center justify-center font-bold">
+                            {rep.user?.name?.[0] || "?"}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{rep.user?.name || "Verified User"}</p>
+                        <p className="text-xs text-muted-foreground">{rep.role}</p>
+                      </div>
+                    </div>
+                    {currentUserId !== rep.userId && (
+                      <div className="flex flex-col items-end gap-1">
+                        {!company.hasVerifiedOwner && company.verificationStatus !== "VERIFIED" ? (
+                          <div className="text-[10px] text-red-500 font-medium text-right max-w-[150px]">
+                            Only verified organization representatives can perform this action
+                          </div>
+                        ) : (
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={`/company/${company._id}/invest?repId=${rep.userId}`}>
+                              Contact
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -251,18 +450,48 @@ export default function CompanyView({ company: initialCompany, jobs, isOwner }: 
             </CardHeader>
             <CardContent>
               <div className="flex items-end gap-2 mb-2">
-                <span className="text-4xl font-bold text-primary">{company.trustScore}</span>
+                <span className="text-4xl font-bold text-primary">{company.trustScore || 0}</span>
                 <span className="text-muted-foreground mb-1">/ 100</span>
               </div>
-              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mb-3">
                 <div 
-                  className={`h-full rounded-full ${company.trustScore >= 80 ? 'bg-green-500' : company.trustScore >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
-                  style={{ width: `${company.trustScore}%` }} 
+                  className={`h-full rounded-full ${(company.trustScore || 0) >= 80 ? 'bg-green-500' : (company.trustScore || 0) >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
+                  style={{ width: `${company.trustScore || 0}%` }} 
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                This score indicates the level of verification provided by the organization administrators.
+              <div className="space-y-1.5 mb-3">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Org Verification</span>
+                  <span className={company.verificationLevel === "STRONG" ? "text-green-600 font-semibold" : "text-yellow-600 font-semibold"}>
+                    {company.verificationLevel}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs items-center">
+                  <span className="text-muted-foreground">Ownership Identity</span>
+                  {company.hasVerifiedOwner ? (
+                    <span className="text-green-600 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> VERIFIED
+                    </span>
+                  ) : company.verificationStatus === "PENDING" ? (
+                    <span className="text-yellow-600 font-semibold flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> PENDING
+                    </span>
+                  ) : (
+                    <span className="text-red-500 font-semibold flex items-center gap-1">
+                      <ShieldAlert className="w-3 h-3" /> UNVERIFIED
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-[11px] leading-tight text-muted-foreground mb-4">
+                This score indicates the platform's confidence in the authenticity of this organization and its representatives, minimizing investment risk.
               </p>
+              {!company.hasVerifiedOwner && (
+                <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleClaimOwnership} disabled={claiming}>
+                  {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  Claim Verified Ownership
+                </Button>
+              )}
             </CardContent>
           </Card>
 

@@ -41,3 +41,28 @@ export async function getCompaniesByCreator(creatorId: string): Promise<Company[
     const db = await getDb();
     return db.collection<Company>("companies").find({ creatorId }).toArray() as Promise<Company[]>;
 }
+
+export async function getCompaniesByRepresentative(userId: string): Promise<Company[]> {
+  const db = await getDb();
+  return db.collection<Company>("companies").find({
+    $or: [
+      { creatorId: userId },
+      { "authorizedRepresentatives.userId": userId }
+    ]
+  }).toArray() as Promise<Company[]>;
+}
+
+export function calculateCompanyTrustScore(company: Partial<Company>): number {
+  let score = 0;
+  
+  if (company.hasVerifiedOwner) score += 40;
+  
+  // Assume STRONG verification level implies domain verified / official documentation
+  if (company.verificationLevel === "STRONG" || company.verificationStatus === "VERIFIED") score += 20;
+  
+  // Base activity (if it has website, description, logo)
+  if (company.website && company.description && company.avatarUrl) score += 20;
+
+  // Assuming negative reports would decrement it, but this acts as the base recalculation
+  return Math.min(100, Math.max(0, score));
+}

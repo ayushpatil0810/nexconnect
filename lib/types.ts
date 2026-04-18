@@ -47,9 +47,32 @@ export interface Profile {
   hasWorkEmail?: boolean;
   hasGovId?: boolean;
   hasLinkedIn?: boolean;
+
+  // Growth & Referrals
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
+  verifiedReferralCount?: number;
   
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Referral {
+  _id?: string;
+  referrerId: string;
+  referredUserId: string;
+  status: "PENDING" | "VERIFIED" | "REJECTED";
+  createdAt: Date;
+}
+
+export interface Reward {
+  _id?: string;
+  userId: string;
+  milestone: number;
+  rewardType: string;
+  status: "LOCKED" | "UNLOCKED" | "CLAIMED";
+  createdAt: Date;
 }
 
 export enum VerificationLevel {
@@ -85,11 +108,114 @@ export interface Company {
   creatorId: string;
   creatorRole: string; // Owner, Founder, Employee
   
+  authorizedRepresentatives?: {
+    userId: string;
+    role: "Owner" | "Admin" | "Representative";
+  }[];
+  
   verificationLevel: VerificationLevel;
   trustScore: number; // 0 to 100
   
+  // New Trust-First Fields
+  isVerifiedOrganization?: boolean;
+  hasVerifiedOwner?: boolean;
+  verificationStatus?: "UNVERIFIED" | "PENDING" | "VERIFIED";
+
+  // Wallet & Credit System
+  walletBalance?: number; // Representing usable promotional balance
+  promoCredits?: number; // Tracks credits available for campaigns
+
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Coupon {
+  _id?: string;
+  code: string;
+  type: "FLAT" | "MULTIPLIER";
+  value: number; // ₹ amount or multiplier (e.g., 2 for 2x)
+  minSpend?: number;
+  maxBenefit?: number;
+  expiryDate: Date;
+  usageLimit: number; // Global limit
+  perUserLimit: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface CouponRedemption {
+  _id?: string;
+  userId: string;
+  companyId: string;
+  couponId: string;
+  creditsAdded: number;
+  redeemedAt: Date;
+}
+
+export interface CampaignUsage {
+  _id?: string;
+  userId: string;
+  companyId: string;
+  campaignId: string; // The promotion ID or opportunity ID
+  creditsUsed: number;
+  timestamp: Date;
+}
+
+export interface OwnershipClaim {
+  _id?: string;
+  userId: string;
+  companyId: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  faceVerified: boolean;
+  domainVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Report {
+  _id?: string;
+  reporterId: string;
+  reportedEntityId: string;
+  entityType: "USER" | "COMPANY";
+  reason: string;
+  status: "OPEN" | "REVIEWED";
+  createdAt: Date;
+}
+
+export interface InvestmentDiscussion {
+  _id?: string;
+  companyId: string;
+  investorId: string;
+  representativeId: string; // The specific owner/rep handling this discussion
+  status: "REQUESTED" | "ACTIVE" | "REJECTED" | "CLOSED";
+  flagged?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type OpportunityType = "PARTNERSHIP" | "FUNDING" | "ACQUISITION" | "SERVICE_REQUEST" | "SERVICE_OFFERING";
+
+export interface BusinessOpportunity {
+  _id?: string;
+  companyId: string; // The verified org posting this
+  title: string;
+  description: string;
+  type: OpportunityType;
+  budget?: string; // e.g. "$50k - $100k"
+  requirements: string[];
+  status: "OPEN" | "IN_PROGRESS" | "CLOSED";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OpportunityResponse {
+  _id?: string;
+  opportunityId: string;
+  responderUserId: string;
+  responderCompanyId?: string; // Optional B2B
+  message: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  createdAt: Date;
 }
 
 export interface Job {
@@ -128,6 +254,61 @@ export interface Application {
   coverLetter?: string;
   resumeUrl?: string; // Optional if using profile data
   matchScore?: number; // Pre-calculated alignment score
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum EventTrustLevel {
+  TRUSTED = "TRUSTED",
+  MODERATE = "MODERATE",
+  UNVERIFIED = "UNVERIFIED"
+}
+
+export interface NexEvent {
+  _id?: string;
+  title: string;
+  description: string;
+  companyId: string; // Organizer
+  location: string;
+  locationType: "In-Person" | "Virtual" | "Hybrid";
+  date: Date;
+  price: number; // in cents
+  category: string;
+  coverImageUrl?: string;
+  trustScore: number; // 0-100
+  trustLevel: EventTrustLevel;
+  status: "UPCOMING" | "ONGOING" | "COMPLETED" | "CANCELLED" | "FLAGGED";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum PaymentStatus {
+  HELD = "HELD", // Escrow
+  RELEASED = "RELEASED", // Paid to organizer
+  REFUNDED = "REFUNDED"
+}
+
+export interface EscrowPayment {
+  _id?: string;
+  userId: string;
+  eventId: string;
+  amount: number; // in cents
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  status: PaymentStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EventRegistration {
+  _id?: string;
+  userId: string;
+  eventId: string;
+  paymentId?: string;
+  ticketId: string; // Unique string
+  status: "VALID" | "CHECKED_IN" | "CANCELLED";
+  rating?: number;
+  feedback?: string;
   createdAt: Date;
   updatedAt: Date;
 }

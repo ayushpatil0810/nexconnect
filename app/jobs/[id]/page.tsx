@@ -34,11 +34,16 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
   let matchAnalysis = null;
   let alreadyApplied = false;
   let applicationStatus = null;
+  let isOwner = false;
   
   if (session?.user) {
-    const existingApp = await getUserApplicationForJob(session.user.id, job._id!.toString());
-    alreadyApplied = !!existingApp;
-    applicationStatus = existingApp?.status || null;
+    isOwner = session.user.id === company.creatorId;
+    
+    if (!isOwner) {
+      const existingApp = await getUserApplicationForJob(session.user.id, job._id!.toString());
+      alreadyApplied = !!existingApp;
+      applicationStatus = existingApp?.status || null;
+    }
     
     const profile = await getProfileByUserId(session.user.id);
     if (profile) {
@@ -92,13 +97,19 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                       )}
                     </div>
                     
-                    <ApplyButton 
-                      jobId={job._id!.toString()} 
-                      jobTitle={job.title} 
-                      hasApplied={alreadyApplied} 
-                      applicationStatus={applicationStatus}
-                      isLoggedIn={!!session?.user} 
-                    />
+                    {isOwner ? (
+                      <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2 bg-primary/10 text-primary hover:bg-primary/20" disabled>
+                        <Briefcase className="w-5 h-5" /> You posted this job
+                      </Button>
+                    ) : (
+                      <ApplyButton 
+                        jobId={job._id!.toString()} 
+                        jobTitle={job.title} 
+                        hasApplied={alreadyApplied} 
+                        applicationStatus={applicationStatus}
+                        isLoggedIn={!!session?.user} 
+                      />
+                    )}
                   </div>
                 </div>
               </CardContent>

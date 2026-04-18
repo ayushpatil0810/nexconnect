@@ -24,6 +24,9 @@ const COUNTRIES = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialRef = searchParams?.get("ref") || "";
+
   const { data: session } = useSession();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -34,6 +37,7 @@ export default function OnboardingPage() {
     country: "",
     headline: "",
     bio: "",
+    referralCode: initialRef,
   });
 
   // Guard: if the user already completed onboarding, redirect to feed immediately
@@ -167,6 +171,19 @@ export default function OnboardingPage() {
                         onChange={(e) => update("phone", e.target.value)}
                         className="h-11"
                       />
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <Label htmlFor="referralCode">Referral Code <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                      <Input
+                        id="referralCode"
+                        placeholder="e.g. A1B2C3D"
+                        value={formData.referralCode}
+                        onChange={(e) => update("referralCode", e.target.value)}
+                        className="h-11"
+                        maxLength={20}
+                      />
+                      <p className="text-xs text-muted-foreground">If you were invited by someone, enter their code here.</p>
                     </div>
                   </div>
 
