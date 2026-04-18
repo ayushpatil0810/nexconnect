@@ -82,13 +82,14 @@ export async function proxy(request: NextRequest) {
   }
 
   const isOnboardingPage = pathname === "/onboarding";
+  const isApiRoute = pathname.startsWith("/api/");
 
-  // 7. Check onboarding status from DB (only for non-trivially-public pages)
+  // 7. Check onboarding status from DB (only for page navigations, not API calls)
   try {
     const onboardingComplete = await getOnboardingStatus(userId);
 
-    // Not yet onboarded → force to /onboarding (unless already there)
-    if (!onboardingComplete && !isOnboardingPage) {
+    // Not yet onboarded → force to /onboarding (unless already there or it's an API route)
+    if (!onboardingComplete && !isOnboardingPage && !isApiRoute) {
       return NextResponse.redirect(new URL("/onboarding", request.url));
     }
 
