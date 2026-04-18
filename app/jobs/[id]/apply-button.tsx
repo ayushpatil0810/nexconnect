@@ -13,19 +13,30 @@ interface ApplyButtonProps {
   jobId: string;
   jobTitle: string;
   hasApplied: boolean;
+  applicationStatus?: string | null;
   isLoggedIn: boolean;
 }
 
-export default function ApplyButton({ jobId, jobTitle, hasApplied, isLoggedIn }: ApplyButtonProps) {
+export default function ApplyButton({ jobId, jobTitle, hasApplied, applicationStatus, isLoggedIn }: ApplyButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
 
   if (hasApplied) {
+    const statusText = applicationStatus 
+      ? applicationStatus.replace('_', ' ') 
+      : 'Applied';
+
+    let iconColor = "text-emerald-600";
+    if (applicationStatus === 'IN_REVIEW') iconColor = "text-yellow-600";
+    if (applicationStatus === 'SHORTLISTED') iconColor = "text-purple-600";
+    if (applicationStatus === 'REJECTED') iconColor = "text-red-600";
+    if (applicationStatus === 'HIRED') iconColor = "text-green-600";
+
     return (
-      <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2" disabled>
-        <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Applied
+      <Button size="lg" variant="secondary" className="w-full sm:w-auto gap-2 capitalize" disabled>
+        <CheckCircle2 className={`w-5 h-5 ${iconColor}`} /> {statusText}
       </Button>
     );
   }

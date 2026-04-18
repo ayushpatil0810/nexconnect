@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getProfileByUserId } from "@/lib/db/profile";
 import { getCompaniesByCreator } from "@/lib/db/company";
 import { getConnections } from "@/lib/db/connection";
+import { getApplicationsByUser } from "@/lib/db/applications";
 import { FeedStream } from "@/components/feed-stream";
 import { Recommendations } from "@/components/recommendations";
 import { Invitations } from "@/components/invitations";
@@ -24,6 +25,7 @@ export default async function FeedPage() {
 
   const companies = await getCompaniesByCreator(session.user.id);
   const connections = await getConnections(session.user.id);
+  const applications = await getApplicationsByUser(session.user.id);
 
   const initials = session.user.name
     ?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "?";
@@ -80,6 +82,25 @@ export default async function FeedPage() {
                     <span className="font-semibold text-primary">{stat.value}</span>
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            {/* My Applications */}
+            <Card className="border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-sm">My Applications</h3>
+                </div>
+                <div className="flex items-center justify-between text-sm mb-4">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Briefcase className="w-4 h-4" />
+                    Applied Jobs
+                  </div>
+                  <span className="font-semibold text-primary">{applications.length}</span>
+                </div>
+                <Button asChild variant="outline" size="sm" className="w-full text-xs h-8">
+                  <Link href="/jobs/applications">Track Applications</Link>
+                </Button>
               </CardContent>
             </Card>
 

@@ -50,3 +50,8 @@ export async function hasUserApplied(userId: string, jobId: string): Promise<boo
   const count = await db.collection("applications").countDocuments({ userId, jobId });
   return count > 0;
 }
+
+export async function getUserApplicationForJob(userId: string, jobId: string): Promise<Application | null> {
+  const db = await getDb();
+  return db.collection<Application>("applications").findOne({ userId, jobId }) as Promise<Application | null>;
+}

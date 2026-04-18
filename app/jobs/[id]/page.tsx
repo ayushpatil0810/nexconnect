@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { getJobById } from "@/lib/db/jobs";
 import { getCompanyById } from "@/lib/db/company";
 import { getProfileByUserId } from "@/lib/db/profile";
-import { hasUserApplied } from "@/lib/db/applications";
+import { hasUserApplied, getUserApplicationForJob } from "@/lib/db/applications";
 import { generateMatchAnalysis } from "@/lib/matching";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -33,9 +33,13 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
   let currentUsername = undefined;
   let matchAnalysis = null;
   let alreadyApplied = false;
+  let applicationStatus = null;
   
   if (session?.user) {
-    alreadyApplied = await hasUserApplied(session.user.id, job._id!.toString());
+    const existingApp = await getUserApplicationForJob(session.user.id, job._id!.toString());
+    alreadyApplied = !!existingApp;
+    applicationStatus = existingApp?.status || null;
+    
     const profile = await getProfileByUserId(session.user.id);
     if (profile) {
       currentUsername = profile.username;
@@ -92,6 +96,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                       jobId={job._id!.toString()} 
                       jobTitle={job.title} 
                       hasApplied={alreadyApplied} 
+                      applicationStatus={applicationStatus}
                       isLoggedIn={!!session?.user} 
                     />
                   </div>
