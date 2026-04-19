@@ -7,14 +7,14 @@ import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Megaphone, TrendingUp, Users, Target, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Megaphone, TrendingUp, Users, Target, ShieldCheck, ExternalLink, BarChart3, MousePointerClick, Eye, ArrowUpRight, UserCheck } from "lucide-react";
 import Link from "next/link";
 import CouponRedeem from "./coupon-redeem";
 import CreateCampaignModal from "./create-campaign-modal";
 
 export default async function PromotionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
+
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     redirect("/auth/sign-in");
@@ -47,7 +47,7 @@ export default async function PromotionsPage({ params }: { params: Promise<{ id:
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar profileUsername={session.user.name?.split(" ").join("").toLowerCase()} />
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 animate-fade-in">
-        
+
         <Link href={`/company/${id}`} className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 mb-6 text-sm">
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -108,7 +108,7 @@ export default async function PromotionsPage({ params }: { params: Promise<{ id:
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <h2 className="text-xl font-bold">Campaign History</h2>
-            
+
             {campaigns.length === 0 ? (
               <Card className="border-border/50 border-dashed bg-muted/30">
                 <CardContent className="p-12 text-center text-muted-foreground">
@@ -118,60 +118,116 @@ export default async function PromotionsPage({ params }: { params: Promise<{ id:
                 </CardContent>
               </Card>
             ) : (
-              campaigns.map(camp => (
-                <Card key={camp._id.toString()} className="border-border/50 overflow-hidden relative">
-                  <div className={`absolute top-0 left-0 w-1 h-full ${camp.status === 'RUNNING' ? 'bg-emerald-500' : 'bg-muted'}`}></div>
-                  <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
-                    <div className="flex-1 w-full">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="outline" className={camp.status === 'RUNNING' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 mb-2' : 'mb-2 text-muted-foreground'}>
+              campaigns.map(camp => {
+                // Use stored analytics if available, otherwise generate deterministic mock
+                const seed = parseInt(camp._id.toString().substring(18), 16) || 1234;
+                const analytics = camp.analytics || {
+                  impressions: (seed % 50) * 120 + 400,
+                  clicks: Math.floor(((seed % 50) * 120 + 400) * (0.02 + (seed % 10) * 0.01)),
+                  ctr: parseFloat(((0.02 + (seed % 10) * 0.01) * 100).toFixed(1)),
+                  conversions: Math.floor(((seed % 50) * 120 + 400) * (0.02 + (seed % 10) * 0.01) * 0.03),
+                  conversionRate: 3.0,
+                  reach: Math.floor(((seed % 50) * 120 + 400) * 0.75),
+                  spent: camp.budget,
+                };
+
+                return (
+                  <Card key={camp._id.toString()} className="border-border/50 overflow-hidden relative">
+                    <div className={`absolute top-0 left-0 w-1 h-full ${camp.status === 'RUNNING' ? 'bg-emerald-500' : camp.status === 'PAUSED' ? 'bg-amber-500' : 'bg-muted'}`}></div>
+                    <CardContent className="p-6">
+                      {/* Header row */}
+                      <div className="flex justify-between items-start mb-3">
+                        <Badge variant="outline" className={camp.status === 'RUNNING' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : camp.status === 'PAUSED' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' : 'text-muted-foreground'}>
                           {camp.status}
                         </Badge>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {new Date(camp.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-lg mb-1">{camp.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">Target: {camp.targetAudience}</p>
-                      
-                      {/* Contextual Analytics Layer */}
-                      <div className="flex items-center justify-between text-sm mb-4 bg-muted/30 p-3 rounded-lg border border-border/50">
-                        <div>
-                          <p className="font-bold text-foreground">
-                            {((parseInt(camp._id.toString().substring(18), 16) || 1234) % 50 * 120 + 400).toLocaleString()}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Impressions</p>
-                        </div>
-                        <div className="h-8 w-px bg-border"></div>
-                        <div>
-                          <p className="font-bold text-foreground">
-                            {Math.floor((((parseInt(camp._id.toString().substring(18), 16) || 1234) % 50 * 120 + 400)) * (0.02 + (((parseInt(camp._id.toString().substring(18), 16) || 1234) % 10) * 0.01))).toLocaleString()}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Clicks</p>
-                        </div>
-                        <div className="h-8 w-px bg-border"></div>
-                        <div>
-                          <p className="font-bold text-primary">
-                            {(((0.02 + (((parseInt(camp._id.toString().substring(18), 16) || 1234) % 10) * 0.01))) * 100).toFixed(1)}%
-                          </p>
-                          <p className="text-xs text-muted-foreground">CTR</p>
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/10 text-primary px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center gap-1">
+                            {camp.budget} <span className="text-[9px] uppercase font-semibold opacity-75">Credits</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(camp.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="bg-primary/10 text-primary px-3 py-1 rounded-md font-bold inline-flex items-center gap-1.5">
-                          {camp.budget} <span className="text-[10px] uppercase font-semibold">Credits Used</span>
+                      <h3 className="font-bold text-lg mb-1">{camp.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">Target: {camp.targetAudience}</p>
+
+                      {/* Promoted Post Link */}
+                      {camp.postUrl && (
+                        <a
+                          href={camp.postUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2.5 p-2.5 mb-4 rounded-lg bg-muted/40 border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                            <ExternalLink className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Promoted Content</p>
+                            <p className="text-sm truncate text-foreground group-hover:text-primary transition-colors">{camp.postUrl}</p>
+                          </div>
+                          <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        </a>
+                      )}
+
+                      {/* Analytics Grid */}
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Eye className="w-3 h-3 text-blue-500" />
+                          </div>
+                          <p className="font-bold text-sm text-foreground">{analytics.impressions.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">Impressions</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <MousePointerClick className="w-3 h-3 text-violet-500" />
+                          </div>
+                          <p className="font-bold text-sm text-foreground">{analytics.clicks.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">Clicks</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <BarChart3 className="w-3 h-3 text-primary" />
+                          </div>
+                          <p className="font-bold text-sm text-primary">{analytics.ctr}%</p>
+                          <p className="text-[10px] text-muted-foreground">CTR</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Target className="w-3 h-3 text-emerald-500" />
+                          </div>
+                          <p className="font-bold text-sm text-foreground">{analytics.conversions.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">Conversions</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <TrendingUp className="w-3 h-3 text-amber-500" />
+                          </div>
+                          <p className="font-bold text-sm text-foreground">{analytics.conversionRate}%</p>
+                          <p className="text-[10px] text-muted-foreground">Conv. Rate</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-lg p-2.5 text-center border border-border/40">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <UserCheck className="w-3 h-3 text-cyan-500" />
+                          </div>
+                          <p className="font-bold text-sm text-foreground">{analytics.reach.toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">Reach</p>
                         </div>
                       </div>
-                    </div>
-                    {camp.status === 'RUNNING' && (
-                      <div className="w-full sm:w-auto shrink-0 flex flex-col gap-2">
-                        <Button variant="secondary" className="w-full text-red-500 hover:text-red-600 hover:bg-red-500/10">Pause</Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+
+                      {/* Actions */}
+                      {camp.status === 'RUNNING' && (
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="secondary" className="text-red-500 hover:text-red-600 hover:bg-red-500/10 text-xs h-8">Pause Campaign</Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
 
