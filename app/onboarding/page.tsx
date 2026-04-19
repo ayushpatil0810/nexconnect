@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Briefcase, User, MapPin, Loader2, ArrowRight, ArrowLeft, Check, Shield } from "lucide-react";
 import FaceLivenessCheck from "@/components/face-liveness-check";
@@ -24,7 +24,7 @@ const COUNTRIES = [
   "France", "India", "Japan", "Brazil", "Mexico", "Singapore", "Other"
 ];
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialRef = searchParams?.get("ref") || "";
@@ -319,5 +319,17 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
