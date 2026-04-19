@@ -5,6 +5,8 @@ import { getProfileByUserId } from "@/lib/db/profile";
 import { Navbar } from "@/components/navbar";
 import JobBoard from "./job-board";
 
+export const dynamic = "force-dynamic";
+
 export default async function JobsPage() {
   const jobs = await getAllActiveJobs();
 

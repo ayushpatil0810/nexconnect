@@ -5,7 +5,7 @@ import { ObjectId } from "mongodb";
 export async function createOpportunity(opportunity: Omit<BusinessOpportunity, "_id" | "createdAt" | "updatedAt">) {
   const db = await getDb();
   
-  const newOpportunity: BusinessOpportunity = {
+  const newOpportunity: Omit<BusinessOpportunity, "_id"> = {
     ...opportunity,
     status: "OPEN",
     createdAt: new Date(),
@@ -50,7 +50,7 @@ export async function getOpportunityById(id: string) {
 export async function createOpportunityResponse(response: Omit<OpportunityResponse, "_id" | "createdAt">) {
   const db = await getDb();
   
-  const newResponse: OpportunityResponse = {
+  const newResponse: Omit<OpportunityResponse, "_id"> = {
     ...response,
     status: "PENDING",
     createdAt: new Date()

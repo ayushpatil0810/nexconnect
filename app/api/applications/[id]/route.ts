@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (success) {
       // Get the application to know the user and job details
       const db = await getDb();
-      const app = await db.collection<Application>("applications").findOne({ _id: new ObjectId(id) });
+      const app = await db.collection("applications").findOne({ _id: new ObjectId(id) }) as Application | null;
       
       if (app) {
         let statusText = status.toLowerCase().replace("_", " ");

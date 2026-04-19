@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Notify company owner
     const company = await getCompanyById(job.companyId);
     if (company) {
-      const applicantName = profile?.profile?.username || session.user.name;
+      const applicantName = profile?.username || session.user.name;
       await createNotification({
         userId: company.creatorId,
         type: NotificationType.APPLICATION_UPDATE,

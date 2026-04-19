@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { calculateCompanyTrustScore } from "@/lib/db/company";
+import { Company } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Dynamic Trust Engine Penalty
     if (entityType === "COMPANY") {
-      const company = await db.collection("companies").findOne({ _id: new ObjectId(reportedEntityId) });
+      const company = await db.collection("companies").findOne({ _id: new ObjectId(reportedEntityId) }) as Company | null;
       if (company) {
         // Flat penalty for being reported. In production this would be weighted by report severity.
         const penalty = 10;

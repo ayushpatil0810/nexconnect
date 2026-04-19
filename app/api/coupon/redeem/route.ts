@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const db = await getDb();
     
     // Validate Organization
-    const company = await db.collection<Company>("companies").findOne({ _id: new ObjectId(companyId) });
+    const company = await db.collection("companies").findOne({ _id: new ObjectId(companyId) }) as Company | null;
     if (!company) {
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Expiry check
     if (new Date() > new Date(coupon.expiryDate)) {
       // Auto mark inactive
-      await db.collection("coupons").updateOne({ _id: coupon._id }, { $set: { isActive: false } });
+      await db.collection("coupons").updateOne({ _id: new ObjectId(coupon._id) }, { $set: { isActive: false } });
       return NextResponse.json({ error: "This coupon has expired" }, { status: 400 });
     }
 

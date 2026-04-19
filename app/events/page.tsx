@@ -5,6 +5,8 @@ import { getAllActiveEvents } from "@/lib/db/events";
 import { Navbar } from "@/components/navbar";
 import EventsBoard from "./events-board";
 
+export const dynamic = "force-dynamic";
+
 export default async function EventsPage() {
   const events = await getAllActiveEvents();
 

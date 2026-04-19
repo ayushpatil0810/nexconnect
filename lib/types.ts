@@ -269,6 +269,7 @@ export interface NexEvent {
   title: string;
   description: string;
   companyId: string; // Organizer
+  attendees?: string[];
   location: string;
   locationType: "In-Person" | "Virtual" | "Hybrid";
   date: Date;

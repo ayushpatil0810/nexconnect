@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const db = await getDb();
-    const company = await db.collection<Company>("companies").findOne({ _id: new ObjectId(id) });
+    const company = await db.collection("companies").findOne({ _id: new ObjectId(id) }) as Company | null;
     
     if (!company) {
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
