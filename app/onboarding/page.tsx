@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Briefcase, User, MapPin, Loader2, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Briefcase, User, MapPin, Loader2, ArrowRight, ArrowLeft, Check, Shield } from "lucide-react";
+import FaceLivenessCheck from "@/components/face-liveness-check";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ const STEPS = [
   { id: 1, label: "Basic Info", icon: User },
   { id: 2, label: "Location", icon: MapPin },
   { id: 3, label: "Professional", icon: Briefcase },
+  { id: 4, label: "Verification", icon: Shield },
 ];
 
 const COUNTRIES = [
@@ -24,13 +26,14 @@ const COUNTRIES = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const searchParams = useSearchParams();
   const initialRef = searchParams?.get("ref") || "";
 
   const { data: session } = useSession();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [faceVerified, setFaceVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -271,16 +274,40 @@ export default function OnboardingPage() {
                     <Button variant="outline" className="flex-1 h-11 gap-2" onClick={() => setStep(2)} id="onboard-step3-back">
                       <ArrowLeft className="w-4 h-4" /> Back
                     </Button>
-                    <Button
-                      className="flex-1 h-11 gap-2"
-                      onClick={handleComplete}
-                      disabled={saving}
-                      id="onboard-complete-btn"
-                    >
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                      {saving ? "Saving..." : "Complete setup"}
+                    <Button className="flex-1 h-11 gap-2" onClick={() => setStep(4)} id="onboard-step3-next">
+                      Continue <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-6 animate-fade-in">
+                  {!faceVerified ? (
+                    <FaceLivenessCheck onVerified={() => setFaceVerified(true)} />
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="text-center">
+                        <h2 className="text-2xl font-bold">You&apos;re all set! 🎉</h2>
+                        <p className="text-muted-foreground mt-1">Face verification complete — let&apos;s finish your profile</p>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1 h-11 gap-2" onClick={() => { setFaceVerified(false); setStep(3); }} id="onboard-step4-back">
+                          <ArrowLeft className="w-4 h-4" /> Back
+                        </Button>
+                        <Button
+                          className="flex-1 h-11 gap-2"
+                          onClick={handleComplete}
+                          disabled={saving}
+                          id="onboard-complete-btn"
+                        >
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          {saving ? "Saving..." : "Complete setup"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

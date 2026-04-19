@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, targetAudience, budget } = await request.json();
+    const { title, targetAudience, budget, postUrl } = await request.json();
     if (!title || !budget || budget <= 0) {
       return NextResponse.json({ error: "Invalid campaign parameters" }, { status: 400 });
     }
@@ -43,6 +43,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       { $inc: { promoCredits: -budget } }
     );
 
+    // Generate mock analytics seed based on budget
+    const impressionMultiplier = 8 + Math.floor(Math.random() * 12); // 8-20x budget
+    const impressions = budget * impressionMultiplier;
+    const ctr = 0.02 + Math.random() * 0.06; // 2-8%
+    const clicks = Math.floor(impressions * ctr);
+    const conversionRate = 0.01 + Math.random() * 0.04; // 1-5%
+    const conversions = Math.floor(clicks * conversionRate);
+    const reach = Math.floor(impressions * (0.6 + Math.random() * 0.3)); // 60-90% of impressions
+
     // Create Campaign Record
     const campaignId = new ObjectId().toString();
     await db.collection("campaigns").insertOne({
@@ -51,7 +60,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       title,
       targetAudience,
       budget,
+      postUrl: postUrl || null,
       status: "RUNNING",
+      analytics: {
+        impressions,
+        clicks,
+        ctr: parseFloat((ctr * 100).toFixed(2)),
+        conversions,
+        conversionRate: parseFloat((conversionRate * 100).toFixed(2)),
+        reach,
+        spent: budget,
+      },
       createdAt: new Date(),
     });
 

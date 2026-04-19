@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,11 @@ export default function CouponRedeem({ companyId, initialCredits }: { companyId:
   const [loading, setLoading] = useState(false);
   const [credits, setCredits] = useState(initialCredits || 0);
   const router = useRouter();
+
+  // Keep credits in sync when server re-renders after campaign spend or coupon redeem
+  useEffect(() => {
+    setCredits(initialCredits || 0);
+  }, [initialCredits]);
 
   async function handleRedeem(e: React.FormEvent) {
     e.preventDefault();

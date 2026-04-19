@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { jobId, coverLetter } = body;
+    const { jobId, coverLetter, resumeUrl } = body;
 
     if (!jobId) {
       return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       userId: session.user.id,
       companyId: job.companyId,
       coverLetter,
+      resumeUrl: resumeUrl || undefined,
       matchScore: matchAnalysis.score
     });
 

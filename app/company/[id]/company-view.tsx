@@ -37,7 +37,7 @@ export default function CompanyView({ company: initialCompany, jobs, representat
         throw new Error(data.error || "Failed to submit claim");
       }
       toast.success("Ownership claim submitted for review. Your verification is pending.");
-      
+
       // Optimistic UI update
       setCompany(prev => ({ ...prev, verificationStatus: "PENDING" }));
       router.refresh();
@@ -159,14 +159,14 @@ export default function CompanyView({ company: initialCompany, jobs, representat
               )}
             </div>
           </div>
-          
+
           <div className="flex overflow-x-auto p-2 gap-1 items-center hide-scrollbar bg-muted/20">
             {company.verificationLevel !== "STRONG" && !editMode && (
               <Button size="sm" asChild variant="destructive" className="gap-2 shrink-0 h-8">
-                <Link href={`/company/create`}><ShieldAlert className="w-3.5 h-3.5"/> Verify Ownership</Link>
+                <Link href={`/company/create`}><ShieldAlert className="w-3.5 h-3.5" /> Verify Ownership</Link>
               </Button>
             )}
-            
+
             {!editMode && company.verificationLevel === "STRONG" && (
               <>
                 <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
@@ -179,9 +179,9 @@ export default function CompanyView({ company: initialCompany, jobs, representat
                     <Globe className="w-3.5 h-3.5" /> Post Pitch
                   </Link>
                 </Button>
-                
+
                 <div className="w-px h-4 bg-border/80 mx-1 shrink-0" />
-                
+
                 <Button size="sm" asChild variant="ghost" className="gap-2 shrink-0 h-8 font-medium text-muted-foreground hover:text-foreground">
                   <Link href={`/company/${company._id}/events`}>
                     <Calendar className="w-3.5 h-3.5" /> Events
@@ -237,7 +237,7 @@ export default function CompanyView({ company: initialCompany, jobs, representat
                     </button>
                   )}
                 </div>
-                
+
                 <div className="flex gap-2">
                   {company.verificationLevel === "STRONG" ? (
                     <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 gap-1.5 px-3 py-1">
@@ -348,9 +348,9 @@ export default function CompanyView({ company: initialCompany, jobs, representat
             </CardHeader>
             <CardContent>
               {editMode ? (
-                <Textarea 
-                  value={editDescription} 
-                  onChange={(e) => setEditDescription(e.target.value)} 
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Describe your company's mission, vision, and what you do..."
                   className="min-h-[150px] resize-y"
                 />
@@ -372,18 +372,18 @@ export default function CompanyView({ company: initialCompany, jobs, representat
               <p className="text-sm text-muted-foreground mb-4">
                 The following individuals have been verified as official representatives of this organization. To ensure security, investment inquiries should only be directed to these verified members.
               </p>
-              
+
               {editMode && (
                 <div className="bg-muted/50 p-4 rounded-xl border border-border mb-4 space-y-3">
                   <h4 className="text-sm font-semibold">Map New Representative</h4>
                   <div className="flex gap-2 items-center">
-                    <Input 
-                      placeholder="User ID..." 
-                      className="h-8 flex-1 text-xs" 
+                    <Input
+                      placeholder="User ID..."
+                      className="h-8 flex-1 text-xs"
                       value={newRepId}
                       onChange={(e) => setNewRepId(e.target.value)}
                     />
-                    <select 
+                    <select
                       className="h-8 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm"
                       value={newRepRole}
                       onChange={(e) => setNewRepRole(e.target.value)}
@@ -454,9 +454,9 @@ export default function CompanyView({ company: initialCompany, jobs, representat
                 <span className="text-muted-foreground mb-1">/ 100</span>
               </div>
               <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mb-3">
-                <div 
-                  className={`h-full rounded-full ${(company.trustScore || 0) >= 80 ? 'bg-green-500' : (company.trustScore || 0) >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
-                  style={{ width: `${company.trustScore || 0}%` }} 
+                <div
+                  className={`h-full rounded-full ${(company.trustScore || 0) >= 80 ? 'bg-green-500' : (company.trustScore || 0) >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${company.trustScore || 0}%` }}
                 />
               </div>
               <div className="space-y-1.5 mb-3">
