@@ -93,7 +93,7 @@ export function Navbar({ profileUsername }: { profileUsername?: string }) {
           )}
 
           {/* Notifications */}
-          {session?.user && <NotificationBell />}
+          {mounted && session?.user && <NotificationBell />}
 
           {/* Profile dropdown */}
           <DropdownMenu>
