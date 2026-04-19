@@ -2,8 +2,10 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { MongoClient } from "mongodb";
 
-const client = new MongoClient(process.env.DATABASE_URL || "mongodb://localhost:27017/nexconnect");
-const db = client.db();
+const databaseUrl = process.env.DATABASE_URL || "mongodb://localhost:27017/nexconnect";
+const databaseName = process.env.MONGODB_DB_NAME || "nexconnect";
+const client = new MongoClient(databaseUrl);
+const db = client.db(databaseName);
 
 export const auth = betterAuth({
   database: mongodbAdapter(db),

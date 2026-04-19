@@ -24,6 +24,52 @@ const PUBLIC_PREFIXES = [
 /** Auth pages — redirect away if the user is already logged in */
 const AUTH_ONLY_ROUTES = new Set(["/auth/sign-in", "/auth/sign-up"]);
 
+// ── CORS helpers (API routes only) ───────────────────────────────────────────
+
+const DEFAULT_CORS_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
+const DEFAULT_CORS_HEADERS = "Content-Type, Authorization";
+
+function getAllowedOrigins(): string[] {
+  const configured = process.env.CORS_ALLOWED_ORIGINS
+    ?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
+
+  const defaults = [process.env.NEXT_PUBLIC_APP_URL, process.env.BETTER_AUTH_URL]
+    .filter((origin): origin is string => Boolean(origin))
+    .map((origin) => origin.trim());
+
+  return [...new Set([...configured, ...defaults])];
+}
+
+function resolveAllowedOrigin(request: NextRequest): string | null {
+  const requestOrigin = request.headers.get("origin");
+  if (!requestOrigin) return null;
+
+  const allowedOrigins = getAllowedOrigins();
+  if (allowedOrigins.includes("*")) return "*";
+  return allowedOrigins.includes(requestOrigin) ? requestOrigin : null;
+}
+
+function applyCorsHeaders(response: NextResponse, request: NextRequest) {
+  const allowedOrigin = resolveAllowedOrigin(request);
+  if (!allowedOrigin) return response;
+
+  response.headers.set("Access-Control-Allow-Origin", allowedOrigin);
+  response.headers.set("Access-Control-Allow-Methods", DEFAULT_CORS_METHODS);
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    request.headers.get("access-control-request-headers") || DEFAULT_CORS_HEADERS
+  );
+  response.headers.set("Vary", "Origin");
+
+  if (allowedOrigin !== "*") {
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+  }
+
+  return response;
+}
+
 // ── MongoDB helper (proxy-local, lightweight) ──────────────────────────────
 
 let _client: MongoClient | null = null;
@@ -44,10 +90,16 @@ async function getOnboardingStatus(userId: string): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isApiRoute = pathname.startsWith("/api/");
+
+  if (isApiRoute && request.method === "OPTIONS") {
+    return applyCorsHeaders(new NextResponse(null, { status: 204 }), request);
+  }
 
   // 1. Always allow: Next.js internals, auth APIs, verification endpoints
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    return isApiRoute ? applyCorsHeaders(response, request) : response;
   }
 
   // 2. Always allow: public profile pages (e.g. /profile/username)
@@ -82,7 +134,6 @@ export async function proxy(request: NextRequest) {
   }
 
   const isOnboardingPage = pathname === "/onboarding";
-  const isApiRoute = pathname.startsWith("/api/");
 
   // 7. Check onboarding status from DB (only for page navigations, not API calls)
   try {
@@ -101,7 +152,8 @@ export async function proxy(request: NextRequest) {
     // DB unreachable — allow through to avoid locking everyone out
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  return isApiRoute ? applyCorsHeaders(response, request) : response;
 }
 
 export const config = {
